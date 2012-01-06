@@ -1,6 +1,7 @@
 import datetime
 import optparse
 import os
+from urlparse import urlparse
 
 import cloudfiles
 
@@ -34,6 +35,9 @@ class Command(BaseCommand):
 
     if not DIRECTORY.endswith('/'):
         DIRECTORY = DIRECTORY + '/'
+
+
+    STATIC_URL = urlparse(STATIC_URL)[2] # Path component is 2
 
     if STATIC_URL.startswith('/'):
         STATIC_URL = STATIC_URL[1:]
