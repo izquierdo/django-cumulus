@@ -46,6 +46,8 @@ class Command(BaseCommand):
         AUTH_URL = getattr(cloudfiles, AUTH_URL)
 
     local_object_names = []
+    cloudfile_info_list = []
+
     create_count = 0
     upload_count = 0
     update_count = 0
@@ -65,7 +67,7 @@ class Command(BaseCommand):
                                               api_key = self.API_KEY,
                                               authurl = self.AUTH_URL,
                                               servicenet=self.USE_SERVICENET)
-                                              
+
         try:
             self.container = self.conn.get_container(self.STATIC_CONTAINER)
         except cloudfiles.errors.NoSuchContainer:
@@ -83,6 +85,10 @@ class Command(BaseCommand):
                 for cloud_obj in self.container.get_objects():
                     self.container.delete_object(cloud_obj.name)
 
+        if self.verbosity > 1:
+            print "Retreiving cloud file metadata"
+        self.cloudfile_info_list = self.container.list_objects_info()
+
         # walk through the directory, creating or updating files on the cloud
         os.path.walk(self.DIRECTORY, self.upload_files, "foo")
 
@@ -98,6 +104,7 @@ class Command(BaseCommand):
             self.skip_count, self.create_count, self.update_count, self.delete_count)
 
     def upload_files(self, arg, dirname, names):
+
         # upload or skip items
         for item in names:
             if item in self.FILTER_LIST:
@@ -110,25 +117,32 @@ class Command(BaseCommand):
             object_name = self.STATIC_URL + file_path.split(self.DIRECTORY)[1]
             self.local_object_names.append(object_name)
 
-            try:
-                cloud_obj = self.container.get_object(object_name)
-            except cloudfiles.errors.NoSuchObject:
-                cloud_obj = self.container.create_object(object_name)
+            # check if the metadata for our object is on the server
+            obj_info = next((o for o in self.cloudfile_info_list if o['name'] == object_name), None)
+
+            if not obj_info:
+                # it is not on the server yet, we will create the object
+                if not self.test_run:
+                    cloud_obj = self.container.create_object(object_name)
                 self.create_count += 1
+            else:
+                # check if it needs to be re-uploaded
+                cloud_datetime = (obj_info['last_modified'] and
+                                  datetime.datetime.strptime(
+                                    obj_info['last_modified'],
+                                    "%Y-%m-%dT%H:%M:%S.%f",
+                                  ) or None)
+                local_datetime = datetime.datetime.utcfromtimestamp(
+                                                   os.stat(file_path).st_mtime)
+                if cloud_datetime and local_datetime < cloud_datetime:
+                    self.skip_count += 1
+                    if self.verbosity > 1:
+                        print "Skipped %s: not modified." % object_name
+                    continue
+                # we will have to update it, grab the object
+                cloud_obj = self.container.get_object(object_name)
 
-            cloud_datetime = (cloud_obj.last_modified and
-                              datetime.datetime.strptime(
-                                cloud_obj.last_modified,
-                                "%a, %d %b %Y %H:%M:%S %Z"
-                              ) or None)
-            local_datetime = datetime.datetime.utcfromtimestamp(
-                                               os.stat(file_path).st_mtime)
-            if cloud_datetime and local_datetime < cloud_datetime:
-                self.skip_count += 1
-                if self.verbosity > 1:
-                    print "Skipped %s: not modified." % object_name
-                continue
-
+            # upload the file content
             if not self.test_run:
                 cloud_obj.load_from_filename(file_path)
             self.upload_count += 1
