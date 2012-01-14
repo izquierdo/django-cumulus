@@ -6,7 +6,7 @@ CUMULUS = {
     'API_KEY': None,
     'AUTH_URL': 'us_authurl',
     'CNAMES': None,
-    'STATIC_CONTAINER': None,
+    'CONTAINER': None,
     'SERVICENET': False,
     'TIMEOUT': 5,
     'TTL': 600,
@@ -33,7 +33,7 @@ if not hasattr(settings, 'CUMULUS'):
     CUMULUS.update({
         'API_KEY': getattr(settings, 'CUMULUS_API_KEY'),
         'CNAMES': getattr(settings, 'CUMULUS_CNAMES', None),
-        'STATIC_CONTAINER': getattr(settings, 'CUMULUS_CONTAINER'),
+        'CONTAINER': getattr(settings, 'CUMULUS_CONTAINER'),
         'SERVICENET': getattr(settings, 'CUMULUS_USE_SERVICENET', False),
         'TIMEOUT': getattr(settings, 'CUMULUS_TIMEOUT', 5),
         'TTL': getattr(settings, 'CUMULUS_TTL', 600),

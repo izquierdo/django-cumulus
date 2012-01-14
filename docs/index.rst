@@ -37,7 +37,7 @@ Add the following to your project's settings.py file::
 
     CUMULUS_USERNAME = 'YourUsername'
     CUMULUS_API_KEY = 'YourAPIKey'
-    CUMULUS_STATIC_CONTAINER = 'ContainerName'
+    CUMULUS_CONTAINER = 'ContainerName'
     DEFAULT_FILE_STORAGE = 'cumulus.storage.CloudFilesStorage'
 
 Alternatively, if you don't want to set the DEFAULT_FILE_STORAGE, you can do the following in your models::
