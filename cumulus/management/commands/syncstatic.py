@@ -81,6 +81,8 @@ class Command(BaseCommand):
                 print "Deleting %d objects..." % self.container.object_count
                 for cloud_obj in self.container.get_objects():
                     self.container.delete_object(cloud_obj.name)
+                    if self.verbosity > 1:
+                        print "Deleted %s" % cloud_obj.name
 
         if self.verbosity > 1:
             print "Retreiving cloud file metadata"
@@ -99,6 +101,13 @@ class Command(BaseCommand):
             print "Test run complete with the following results:"
         print "Skipped %d. Created %d. Updated %d. Deleted %d." % (
             self.skip_count, self.create_count, self.update_count, self.delete_count)
+
+        if self.verbosity > 1:
+            print "CDN public uri:           %s" % self.container.public_uri()
+            print "CDN public ssl uri:       %s" % self.container.public_ssl_uri()
+            print "CDN public streaming uri: %s" % self.container.public_streaming_uri()
+            print "CDN TTL: %s" % self.container.cdn_ttl
+            print "CDN Size: %s" % self.container.size_used
 
     def upload_files(self, arg, dirname, names):
 
