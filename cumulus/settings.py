@@ -34,6 +34,7 @@ if not hasattr(settings, 'CUMULUS'):
         'API_KEY': getattr(settings, 'CUMULUS_API_KEY'),
         'CNAMES': getattr(settings, 'CUMULUS_CNAMES', None),
         'CONTAINER': getattr(settings, 'CUMULUS_CONTAINER'),
+        'STATIC_CONTAINER': getattr(settings, 'CUMULUS_STATIC_CONTAINER'),
         'SERVICENET': getattr(settings, 'CUMULUS_USE_SERVICENET', False),
         'TIMEOUT': getattr(settings, 'CUMULUS_TIMEOUT', 5),
         'TTL': getattr(settings, 'CUMULUS_TTL', 600),
