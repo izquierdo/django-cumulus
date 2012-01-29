@@ -146,6 +146,12 @@ class Command(BaseCommand):
                     if self.verbosity > 1:
                         print "Skipped %s: not modified." % object_name
                     continue
+                # check if the hash matches
+                with file(file_path) as source:
+                    if obj_info['hash'] == cloudfiles.Object.compute_md5sum(source):
+                        if self.verbosity > 1:
+                            print "Skipped %s: not modified (checksum)." % object_name
+                        continue
                 # we will have to update it, grab the object
                 cloud_obj = self.container.get_object(object_name)
 
