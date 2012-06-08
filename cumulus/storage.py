@@ -1,13 +1,31 @@
-from StringIO import StringIO
-import os
-import cloudfiles
 import mimetypes
+import os
+import re
+from StringIO import StringIO
+
+import cloudfiles
 from cloudfiles.errors import NoSuchObject, ResponseError
 
 from django.core.files import File
 from django.core.files.storage import Storage
 
 from .settings import CUMULUS
+
+
+HEADER_PATTERNS = tuple((re.compile(p), h) for p, h in CUMULUS.get('HEADERS', {}))
+
+
+def sync_headers(cloud_obj, headers={}, header_patterns=HEADER_PATTERNS):
+    if hasattr(cloud_obj, 'headers'):
+        matched_headers = {}
+        for pattern, pattern_headers in header_patterns:
+            if pattern.match(cloud_obj.name):
+                matched_headers = pattern_headers.copy()
+                break
+        matched_headers.update(headers)
+        if matched_headers != cloud_obj.headers:
+            cloud_obj.headers = matched_headers
+            cloud_obj.sync_metadata()
 
 
 class CloudFilesStorage(Storage):
@@ -129,6 +147,7 @@ class CloudFilesStorage(Storage):
             cloud_obj.content_type = mime_type
         cloud_obj.send(content)
         content.close()
+        sync_headers(cloud_obj)
         return name
 
     def delete(self, name):
@@ -208,6 +227,7 @@ class CloudFilesStorage(Storage):
         """
         return '%s/%s' % (self.container_url, name)
 
+
 class CloudStorageDirectory(File):
     """
     A File-like object that creates a directory at cloudfiles
@@ -229,6 +249,23 @@ class CloudStorageDirectory(File):
 
     def close(self):
         pass
+
+
+class CloudFilesStaticStorage(CloudFilesStorage):
+    """
+    Subclasses CloudFilesStorage to automatically set the container to the one
+    specified in CUMULUS['STATIC_CONTAINER']. This provides the ability to
+    specify a separate storage backend for Django's collectstatic command.
+
+    To use, make sure CUMULUS['STATIC_CONTAINER'] is set to something other
+    than CUMULUS['CONTAINER']. Then, tell Django's staticfiles app by setting
+    STATICFILES_STORAGE = 'cumulus.storage.CloudFilesStaticStorage'.
+    """
+    def __init__(self, *args, **kwargs):
+        if not 'container' in kwargs:
+            kwargs['container'] = CUMULUS['STATIC_CONTAINER']
+        super(CloudFilesStaticStorage, self).__init__(*args, **kwargs)
+
 
 class CloudFilesStorageFile(File):
     closed = False
@@ -269,8 +306,8 @@ class CloudFilesStorageFile(File):
 
     def read(self, num_bytes=None):
         if self._pos == self._get_size():
-            return None
-        if self._pos + num_bytes > self._get_size():
+            return ""
+        if num_bytes and self._pos + num_bytes > self._get_size():
             num_bytes = self._get_size() - self._pos
         data = self.file.read(size=num_bytes or -1, offset=self._pos)
         self._pos += len(data)
