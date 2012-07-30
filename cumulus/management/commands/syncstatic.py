@@ -23,6 +23,9 @@ class Command(BaseCommand):
         optparse.make_option('-a', '--add-only',
             action='store_true', dest='add_only', default=False,
             help="Syncs all files but without doing updates or deletes."),
+        optparse.make_option('-n', '--no-delete',
+            action='store_true', dest='no_delete', default=False,
+            help="Syncs all files but without doing deletes."),
     )
 
     # settings from cumulus.settings
@@ -61,6 +64,7 @@ class Command(BaseCommand):
         self.wipe = options.get('wipe')
         self.test_run = options.get('test_run')
         self.add_only = options.get('add_only')
+        self.no_delete = options.get('no_delete')
         self.verbosity = int(options.get('verbosity'))
         self.sync_files()
 
@@ -97,7 +101,7 @@ class Command(BaseCommand):
         os.path.walk(self.DIRECTORY, self.upload_files, "foo")
 
         # remove any files on remote that don't exist locally
-        if not self.add_only:
+        if (not self.add_only) or (not self.no_delete):
             self.delete_files()
 
         # print out the final tally to the cmd line
