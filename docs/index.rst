@@ -120,6 +120,11 @@ You can also perform a test run::
 
     django-admin.py syncstatic -t
 
+Sometimes it is useful to be able to add new files to the CDN before deleting or
+updating existing files. This can help make rolling builds easier.::
+
+    django-admin.py syncstatic --add-only
+
 For a full list of available options::
 
     django-admin.py help syncstatic
