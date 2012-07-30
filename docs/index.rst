@@ -120,6 +120,22 @@ You can also perform a test run::
 
     django-admin.py syncstatic -t
 
+Sometimes it is useful to be able to add new files to the CDN before deleting or
+updating existing files. This can help make rolling builds easier.::
+
+    django-admin.py syncstatic --add-only
+
+When it comes time to restart the system you can run syncstatic a second time
+with the no-delete option. Because you've already synced up the added files,
+this will be much faster. Any requests that are currently in-flight will still
+be able to find the old files::
+
+    django-admin.py syncstatic --no-delete
+
+Finally, at any time after your deployment, and once you are sure that old files
+are no longer needed, you can run synctatic in normal mode to delete the
+unused files.
+
 For a full list of available options::
 
     django-admin.py help syncstatic
