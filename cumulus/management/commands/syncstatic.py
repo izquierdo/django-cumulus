@@ -101,7 +101,7 @@ class Command(BaseCommand):
         os.path.walk(self.DIRECTORY, self.upload_files, "foo")
 
         # remove any files on remote that don't exist locally
-        if (not self.add_only) or (not self.no_delete):
+        if (not self.add_only) and (not self.no_delete):
             self.delete_files()
 
         # print out the final tally to the cmd line
